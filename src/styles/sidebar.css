@@ -1,0 +1,178 @@
+/* Sidebar Stylesheet for CrisisTwin */
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--sidebar-width);
+  height: 100vh;
+  background-color: var(--sidebar-bg);
+  border-right: 1px solid var(--secondary-color);
+  color: var(--text-white);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  transition: var(--transition-smooth);
+}
+
+/* Sidebar Logo & Branding Section */
+.sidebar-brand {
+  height: var(--navbar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid var(--secondary-color);
+}
+
+.sidebar-brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brand-icon {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--accent-color);
+}
+
+.sidebar-brand h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text-white);
+  text-transform: uppercase;
+}
+
+/* Close Button on Mobile Drawer */
+.sidebar-close-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: none; /* Only visible in mobile layout breakpoint */
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: 0.375rem;
+  transition: var(--transition-smooth);
+}
+
+.sidebar-close-btn:hover {
+  background-color: var(--sidebar-hover-bg);
+  color: var(--text-white);
+}
+
+.sidebar-close-btn svg {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* Navigation List */
+.sidebar-nav {
+  flex: 1;
+  padding: 1.5rem 0.75rem;
+  overflow-y: auto;
+}
+
+.sidebar-nav ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  color: var(--text-muted);
+  border-radius: 0.5rem;
+  font-size: 0.925rem;
+  font-weight: 500;
+  transition: var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+  transition: var(--transition-smooth);
+}
+
+/* Hover Animation Effects */
+.nav-item:hover {
+  color: var(--text-white);
+  background-color: var(--sidebar-hover-bg);
+  padding-left: 1.25rem; /* Smooth slide-in micro-animation */
+}
+
+.nav-item:hover .nav-icon {
+  transform: scale(1.1);
+  color: var(--accent-color);
+}
+
+/* Active Navigation Item Highlights */
+.nav-item.active {
+  color: var(--text-white);
+  background-color: var(--sidebar-active-bg);
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+}
+
+.nav-item.active .nav-icon {
+  color: var(--text-white);
+  transform: scale(1.05);
+}
+
+/* Active marker bar */
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 25%;
+  bottom: 25%;
+  width: 4px;
+  background-color: var(--text-white);
+  border-radius: 0 4px 4px 0;
+}
+
+/* Sidebar Footer Info Panel */
+.sidebar-footer {
+  padding: 1.25rem;
+  border-top: 1px solid var(--secondary-color);
+  background-color: rgba(15, 23, 42, 0.6);
+}
+
+.footer-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.footer-status-indicator {
+  width: 6px;
+  height: 6px;
+  background-color: var(--alert-success);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--alert-success);
+}
+
+.footer-status span {
+  font-size: 0.675rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+}
+
+.footer-version {
+  font-size: 0.625rem;
+  color: var(--text-muted);
+  font-family: monospace;
+  padding-left: 0.85rem;
+}

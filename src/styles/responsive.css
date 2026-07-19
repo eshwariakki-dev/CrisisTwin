@@ -1,0 +1,76 @@
+/* Responsive Styling for CrisisTwin Dashboard */
+
+/* Desktop viewports (large screens) */
+@media (min-width: 1025px) {
+  .menu-toggle-btn {
+    display: none; /* Hide menu toggle button since sidebar is permanently open */
+  }
+}
+
+/* Tablet & Mobile viewports (screens smaller than 1025px) */
+@media (max-width: 1024px) {
+  .main-container {
+    margin-left: 0 !important; /* Sidebar overlay takes full-width overlay role */
+  }
+  
+  .navbar {
+    left: 0 !important;
+    padding: 0 1.25rem;
+  }
+
+  /* Sidebar slides out from the left */
+  .sidebar {
+    transform: translateX(-100%);
+    z-index: 1000;
+    box-shadow: none;
+  }
+  
+  /* When sidebar state is open */
+  .dashboard-wrapper.sidebar-open .sidebar {
+    transform: translateX(0);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  /* Sidebar dark overlay backdrop */
+  .sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(2px);
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: var(--transition-smooth);
+  }
+  
+  .dashboard-wrapper.sidebar-open .sidebar-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  
+  .menu-toggle-btn {
+    display: flex;
+  }
+}
+
+/* Extra small mobile viewports */
+@media (max-width: 576px) {
+  .navbar-status {
+    display: none; /* Hide system status text on small displays */
+  }
+  
+  .navbar-datetime {
+    display: none; /* Hide clock on very small displays to save horizontal space */
+  }
+  
+  .navbar-title h1 {
+    font-size: 1.15rem;
+  }
+
+  .content-outlet {
+    padding: 1rem;
+  }
+}
