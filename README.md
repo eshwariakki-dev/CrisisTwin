@@ -1,16 +1,33 @@
-# React + Vite
+# 🌍 CrisisTwin
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+## AI-Powered Predictive Disaster Intelligence Platform
 
-Currently, two official plugins are available:
+CrisisTwin is an AI-powered disaster management platform that predicts disaster risks using live weather data, interactive maps, and AI-powered analysis to support faster emergency response.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Live Demo
 
-## React Compiler
+https://crisis-twin-pied.vercel.app
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 📂 GitHub Repository
 
-## Expanding the Oxlint configuration
+https://github.com/eshwariakki-dev/CrisisTwin
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## ✨ Features
+
+- Live Weather Monitoring
+- AI Risk Prediction
+- Interactive Disaster Map
+- Hospitals & Shelter Locator
+- Resource Management
+- Disaster Alerts
+- Responsive Dashboard
+
+## 🛠 Technologies Used
+
+- React.js
+- Vite
+- JavaScript
+- CSS
+- Leaflet.js
+- OpenWeather API
+- Google Gemini API
