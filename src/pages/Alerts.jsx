@@ -1,172 +1,146 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { getWeather } from "../services/weatherService";
+import { getLocation } from "../services/locationService";
+import "../styles/alerts.css";
 
 function Alerts() {
-  const disasterLocation =
-    JSON.parse(localStorage.getItem("disasterLocation")) || {
-      lat: 12.9716,
-      lng: 77.5946,
-    };
+  const [alerts, setAlerts] = useState([]);
 
-  let area = "Central Bengaluru";
-  let alerts = [];
+  useEffect(() => {
+    loadAlerts();
+  }, []);
 
-  // Whitefield
-  if (disasterLocation.lng > 77.72) {
-    area = "Whitefield";
+  const loadAlerts = async () => {
+    try {
+      const location = getLocation();
+const city = location.city;
 
-    alerts = [
-      {
-        color: "#dc2626",
-        severity: "🔴 HIGH",
-        title: "Flood Warning",
-        status: "Active",
-        desc: "Heavy rainfall may cause flooding and waterlogging.",
-        action:
-          "Deploy rescue teams, open nearby shelters, and alert hospitals.",
-      },
-      {
-        color: "#2563eb",
-        severity: "🔵 INFO",
-        title: "Hospital Alert",
-        status: "Ready",
-        desc: "Nearest hospital is prepared for emergency admissions.",
-        action: "Route injured citizens to the nearest hospital.",
-      },
-    ];
-  }
+      const weather = await getWeather(city);
 
-  // Yelahanka
-  else if (disasterLocation.lat > 13.05) {
-    area = "Yelahanka";
+      const generatedAlerts = [];
 
-    alerts = [
-      {
-        color: "#f97316",
-        severity: "🟠 MEDIUM",
-        title: "Strong Wind Alert",
-        status: "Monitoring",
-        desc: "Strong winds expected over the next few hours.",
-        action:
-          "Keep emergency teams on standby and secure loose structures.",
-      },
-      {
-        color: "#16a34a",
-        severity: "🟢 LOW",
-        title: "Shelter Update",
-        status: "Available",
-        desc: "Nearest shelter has sufficient capacity.",
-        action: "Direct evacuees to the nearest shelter if required.",
-      },
-    ];
-  }
+      const condition = weather.weather[0].main.toLowerCase();
+      const temp = weather.main.temp;
+      const wind = weather.wind.speed;
 
-  // Jayanagar
-  else if (disasterLocation.lat < 12.94) {
-    area = "Jayanagar";
+      // Flood Alert
+      if (condition.includes("rain")) {
+        generatedAlerts.push({
+          type: "🌧 Flood Alert",
+          severity: "High",
+          message:
+            "Heavy rainfall detected. Avoid low-lying areas and flooded roads.",
+          recommendation:
+            "Move to higher ground and keep emergency supplies ready.",
+        });
+      }
 
-    alerts = [
-      {
-        color: "#f97316",
-        severity: "🟠 MEDIUM",
-        title: "Heavy Rain Alert",
-        status: "Active",
-        desc: "Continuous rainfall may affect traffic movement.",
-        action:
-          "Monitor drainage systems and divert traffic where necessary.",
-      },
-      {
-        color: "#2563eb",
-        severity: "🔵 INFO",
-        title: "Traffic Advisory",
-        status: "Monitoring",
-        desc: "Slow traffic expected due to waterlogging.",
-        action: "Use alternate emergency routes.",
-      },
-    ];
-  }
+      // Thunderstorm
+      if (condition.includes("thunderstorm")) {
+        generatedAlerts.push({
+          type: "⛈ Thunderstorm Warning",
+          severity: "High",
+          message:
+            "Thunderstorms expected. Stay indoors and avoid open areas.",
+          recommendation:
+            "Disconnect electrical appliances and avoid sheltering under trees.",
+        });
+      }
 
-  // Rajajinagar
-  else if (disasterLocation.lng < 77.56) {
-    area = "Rajajinagar";
+      // Strong Wind
+      if (wind >= 8) {
+        generatedAlerts.push({
+          type: "🌬 Strong Wind Alert",
+          severity: "Medium",
+          message:
+            "Strong winds detected. Outdoor movement may be unsafe.",
+          recommendation:
+            "Secure loose objects and avoid unnecessary travel.",
+        });
+      }
 
-    alerts = [
-      {
-        color: "#eab308",
-        severity: "🟡 LOW",
-        title: "Heat Alert",
-        status: "Monitoring",
-        desc: "High temperatures expected this afternoon.",
-        action:
-          "Issue heat advisories and keep medical teams prepared.",
-      },
-      {
-        color: "#16a34a",
-        severity: "🟢 INFO",
-        title: "Resource Status",
-        status: "Available",
-        desc: "Emergency resources are available nearby.",
-        action: "Continue monitoring the situation.",
-      },
-    ];
-  }
+      // Heatwave
+      if (temp >= 35) {
+        generatedAlerts.push({
+          type: "🔥 Heatwave Alert",
+          severity: "High",
+          message:
+            "Extreme temperatures detected. Risk of heat-related illness.",
+          recommendation:
+            "Stay hydrated and avoid direct sunlight during peak hours.",
+        });
+      }
 
-  // Default
-  else {
-    area = "Central Bengaluru";
+      // Fog / Mist
+      if (
+        condition.includes("fog") ||
+        condition.includes("mist") ||
+        condition.includes("haze")
+      ) {
+        generatedAlerts.push({
+          type: "🌫 Low Visibility Alert",
+          severity: "Medium",
+          message:
+            "Reduced visibility due to fog or haze.",
+          recommendation:
+            "Drive carefully and use headlights when necessary.",
+        });
+      }
 
-    alerts = [
-      {
-        color: "#2563eb",
-        severity: "🔵 INFO",
-        title: "Weather Update",
-        status: "Monitoring",
-        desc: "Weather conditions are stable.",
-        action: "Continue routine monitoring.",
-      },
-    ];
-  }
+      // Clouds
+      if (condition.includes("cloud")) {
+        generatedAlerts.push({
+          type: "☁ Weather Advisory",
+          severity: "Low",
+          message:
+            "Cloudy weather detected. Continue monitoring local conditions.",
+          recommendation:
+            "No immediate action required. Stay updated on weather forecasts.",
+        });
+      }
+
+      setAlerts(generatedAlerts);
+    } catch (error) {
+      console.error("Alert Error:", error);
+    }
+  };
 
   return (
     <div className="page">
-      <h1>🚨 Live Disaster Alerts</h1>
+      <div className="page-header">
+        <h1>🚨 Disaster Alerts</h1>
+        <p>Live weather-based alerts and AI recommendations.</p>
+      </div>
 
-      <p>
-        AI-generated alerts for <strong>{area}</strong>.
-      </p>
-
-      {alerts.map((alert, index) => (
-        <div
-          key={index}
-          style={{
-            background: "#1e293b",
-            color: "white",
-            padding: "20px",
-            borderLeft: `8px solid ${alert.color}`,
-            borderRadius: "10px",
-            marginBottom: "18px",
-          }}
-        >
-          <h2>{alert.severity}</h2>
-
-          <h3>{alert.title}</h3>
-
+      {alerts.length === 0 ? (
+        <div className="alert-card low">
+          <h2>✅ No Active Alerts</h2>
+          <p>No significant weather risks detected.</p>
           <p>
-            <strong>📍 Location:</strong> {area}
-          </p>
-
-          <p>
-            <strong>📡 Status:</strong> {alert.status}
-          </p>
-
-          <p>
-            <strong>⚠ Description:</strong> {alert.desc}
-          </p>
-
-          <p>
-            <strong>🤖 AI Recommendation:</strong> {alert.action}
+            <strong>🤖 AI Recommendation:</strong> Continue monitoring weather
+            conditions.
           </p>
         </div>
-      ))}
+      ) : (
+        alerts.map((alert, index) => (
+          <div
+            key={index}
+            className={`alert-card ${alert.severity.toLowerCase()}`}
+          >
+            <h2>{alert.type}</h2>
+
+            <p>
+              <strong>Severity:</strong> {alert.severity}
+            </p>
+
+            <p>{alert.message}</p>
+
+            <p>
+              <strong>🤖 AI Recommendation:</strong> {alert.recommendation}
+            </p>
+          </div>
+        ))
+      )}
     </div>
   );
 }

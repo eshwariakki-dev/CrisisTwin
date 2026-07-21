@@ -1,23 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import GoogleMapView from "../components/GoogleMapView";
-import { getNearbyHospitals } from "../services/hospitalService";
 
 function LiveMap() {
-  const [hospitals, setHospitals] = useState([]);
-
-  useEffect(() => {
-    const loadHospitals = async () => {
-      try {
-        const data = await getNearbyHospitals(12.9716, 77.5946);
-        setHospitals(data);
-      } catch (error) {
-        console.error("Error loading hospitals:", error);
-      }
-    };
-
-    loadHospitals();
-  }, []);
-
   return (
     <div className="page live-map-page">
       <div className="page-header">
@@ -35,62 +19,31 @@ function LiveMap() {
         {/* Right Side */}
         <div className="info-section">
 
+          {/* Weather */}
           <div className="info-card">
-            <h3>🌦 Weather</h3>
-            <p>Temperature : 29°C</p>
-            <p>Humidity : 84%</p>
-            <p>Wind : 18 km/h</p>
+            <h3>🌦 Live Weather</h3>
+            <p>Connected to OpenWeather API</p>
+            <p>Current weather is displayed in the map popup.</p>
           </div>
 
+          {/* Disaster */}
           <div className="info-card">
-            <h3>🚨 Active Disaster</h3>
-            <p>Flood Risk : High</p>
-            <p>Fire Risk : Low</p>
-            <p>Landslide : Moderate</p>
+            <h3>🚨 Disaster Risk</h3>
+            <p>Flood Risk : Dynamic</p>
+            <p>Fire Risk : Dynamic</p>
+            <p>Landslide Risk : Dynamic</p>
           </div>
 
+          {/* AI */}
           <div className="info-card">
             <h3>🤖 AI Recommendation</h3>
             <p>
-              Heavy rainfall expected.
-              Deploy rescue teams near Zone 4.
+              AI recommendations are generated using the current weather
+              conditions and calculated disaster risk.
             </p>
           </div>
 
-          <div className="info-card">
-            <h3>🏥 Nearby Hospitals</h3>
-
-            {hospitals.length === 0 ? (
-              <p>Loading hospitals...</p>
-            ) : (
-              hospitals.slice(0, 5).map((hospital) => (
-                <div
-                  key={hospital.id}
-                  style={{
-                    marginBottom: "12px",
-                    borderBottom: "1px solid #444",
-                    paddingBottom: "8px",
-                  }}
-                >
-                  <strong>
-                    {hospital.tags?.name || "Unnamed Hospital"}
-                  </strong>
-
-                  <br />
-
-                  <small>
-                    Latitude: {hospital.lat || hospital.center?.lat}
-                  </small>
-
-                  <br />
-
-                  <small>
-                    Longitude: {hospital.lon || hospital.center?.lon}
-                  </small>
-                </div>
-              ))
-            )}
-          </div>
+         
 
         </div>
       </div>

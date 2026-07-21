@@ -145,9 +145,8 @@
 .sidebar-footer {
   padding: 1.25rem;
   border-top: 1px solid var(--secondary-color);
-  background-color: rgba(15, 23, 42, 0.6);
+  background-color: var(--secondary-color);
 }
-
 .footer-status {
   display: flex;
   align-items: center;

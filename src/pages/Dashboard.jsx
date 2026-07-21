@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { getWeather, getForecast } from "../services/weatherService";
+import { getLocation, setLocation } from "../services/locationService";
 
 function Dashboard() {
 
   const [currentTime, setCurrentTime] = useState(new Date());
-
+const [city, setCity] = useState(getLocation().city);
   const [weather, setWeather] = useState(null);
   const [forecast, setForecast] = useState(null);
 
@@ -17,18 +18,33 @@ function Dashboard() {
   const [riskScore, setRiskScore] = useState(0);
 
   const [prediction, setPrediction] = useState("");
+const handleSearch = async () => {
+  if (!city.trim()) return;
 
+  const data = await getWeather(city.trim());
+
+  if (!data) return;
+
+  setLocation({
+    city: data.name,
+    lat: data.coord.lat,
+    lng: data.coord.lon,
+  });
+
+  setCity(data.name);
+};
   useEffect(() => {
     const fetchWeather = async () => {
       try {
-        const location =
-  JSON.parse(localStorage.getItem("disasterLocation")) || {
-    lat: 12.9716,
-    lng: 77.5946,
-  };
-
-const data = await getWeather(location.lat, location.lng);
-const forecastData = await getForecast(location.lat, location.lng);
+  
+const location = getLocation();
+const data = await getWeather(location.city);
+if (!data) return;
+const forecastData = await getForecast(
+  data.coord.lat,
+  data.coord.lon
+);
+if (!forecastData) return;
         setWeather(data);
         setForecast(forecastData);
 
@@ -97,7 +113,7 @@ const forecastData = await getForecast(location.lat, location.lng);
     };
 
     fetchWeather();
-  }, []);
+  }, [city]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -127,6 +143,10 @@ const forecastData = await getForecast(location.lat, location.lng);
   const temperature = weather?.main?.temp || 0;
 
   const windSpeed = weather?.wind?.speed || 0;
+  const pressure = weather?.main?.pressure || 0;
+const visibility = weather?.visibility
+  ? (weather.visibility / 1000).toFixed(1)
+  : 0;
 
   const summaryCards = [
     {
@@ -268,6 +288,23 @@ const forecastData = await getForecast(location.lat, location.lng);
         </svg>
       ),
     },
+    {
+  id: "pressure",
+  title: "Pressure",
+  value: `${pressure} hPa`,
+  status: "Atmospheric Pressure",
+  statusType: "info",
+  icon: "🌡️",
+},
+
+{
+  id: "visibility",
+  title: "Visibility",
+  value: `${visibility} km`,
+  status: visibility < 5 ? "Low Visibility" : "Clear Visibility",
+  statusType: visibility < 5 ? "warning" : "success",
+  icon: "👁️",
+},
 
     {
       id: "forecast",
@@ -304,111 +341,77 @@ const forecastData = await getForecast(location.lat, location.lng);
     },
   ];
 
-  const disasterLocation =
-  JSON.parse(localStorage.getItem("disasterLocation")) || null;
+ let recentAlerts = [];
 
-let recentAlerts = [];
+if (forecast?.list) {
+  const next24Hours = forecast.list.slice(0, 8);
 
-if (!disasterLocation) {
-  recentAlerts = [
-    {
+  const hasRain = next24Hours.some(
+    item => item.weather[0].main === "Rain"
+  );
+
+  const hasThunderstorm = next24Hours.some(
+    item => item.weather[0].main === "Thunderstorm"
+  );
+
+  const hasHeatwave = next24Hours.some(
+    item => item.main.temp >= 40
+  );
+
+  const hasStrongWind = next24Hours.some(
+    item => item.wind.speed >= 8
+  );
+
+  if (hasThunderstorm) {
+    recentAlerts.push({
       id: 1,
-      message: "🟢 No disaster location selected.",
-      time: "Live",
-      priority: "INFO",
-      priorityType: "info",
-    },
-  ];
-} else {
-  const { lat, lng } = disasterLocation;
-
-  // Whitefield
-  if (lat >= 12.95 && lat <= 13.05 && lng >= 77.70 && lng <= 77.78) {
-    recentAlerts = [
-      {
-        id: 1,
-        message: "🚨 Flood Warning - Whitefield",
-        time: "Now",
-        priority: "HIGH",
-        priorityType: "danger",
-      },
-      {
-        id: 2,
-        message: "🏥 Manipal Hospital assigned",
-        time: "1 min ago",
-        priority: "READY",
-        priorityType: "success",
-      },
-      {
-        id: 3,
-        message: "🏠 Shelter Activated",
-        time: "2 mins ago",
-        priority: "OPEN",
-        priorityType: "info",
-      },
-      {
-        id: 4,
-        message: "🚒 Rescue Team Dispatched",
-        time: "3 mins ago",
-        priority: "ACTIVE",
-        priorityType: "warning",
-      },
-    ];
+      message: "⛈ Thunderstorm expected within 24 hours",
+      time: "Forecast",
+      priority: "HIGH",
+      priorityType: "danger",
+    });
   }
 
-  // Yelahanka
-  else if (
-    lat >= 13.06 &&
-    lat <= 13.15 &&
-    lng >= 77.55 &&
-    lng <= 77.65
-  ) {
-    recentAlerts = [
-      {
-        id: 1,
-        message: "🌬 Strong Wind Alert - Yelahanka",
-        time: "Now",
-        priority: "MEDIUM",
-        priorityType: "warning",
-      },
-      {
-        id: 2,
-        message: "🏠 Shelter Ready",
-        time: "2 mins ago",
-        priority: "READY",
-        priorityType: "success",
-      },
-      {
-        id: 3,
-        message: "🚓 Police Monitoring Roads",
-        time: "5 mins ago",
-        priority: "ACTIVE",
-        priorityType: "info",
-      },
-      {
-        id: 4,
-        message: "🏥 Columbia Asia Hospital Ready",
-        time: "6 mins ago",
-        priority: "READY",
-        priorityType: "success",
-      },
-    ];
+  if (hasRain) {
+    recentAlerts.push({
+      id: 2,
+      message: "🌧 Rain expected within 24 hours",
+      time: "Forecast",
+      priority: "MEDIUM",
+      priorityType: "warning",
+    });
   }
 
-  // Everywhere else
-  else {
-    recentAlerts = [
-      {
-        id: 1,
-        message: "🟢 No major incidents reported.",
-        time: "Live",
-        priority: "LOW",
-        priorityType: "success",
-      },
-    ];
+  if (hasHeatwave) {
+    recentAlerts.push({
+      id: 3,
+      message: "🌡 Heatwave conditions expected",
+      time: "Forecast",
+      priority: "HIGH",
+      priorityType: "danger",
+    });
+  }
+
+  if (hasStrongWind) {
+    recentAlerts.push({
+      id: 4,
+      message: "💨 Strong winds expected",
+      time: "Forecast",
+      priority: "MEDIUM",
+      priorityType: "warning",
+    });
+  }
+
+  if (recentAlerts.length === 0) {
+    recentAlerts.push({
+      id: 5,
+      message: "🟢 No severe weather expected in the next 24 hours",
+      time: "Forecast",
+      priority: "SAFE",
+      priorityType: "success",
+    });
   }
 }
-
   const systemStatus = [
     {
       name: "AI Engine",
@@ -484,6 +487,45 @@ if (!disasterLocation) {
             </p>
           </div>
         </div>
+        <div
+  style={{
+    marginTop: "20px",
+    display: "flex",
+    gap: "10px",
+    alignItems: "center",
+  }}
+>
+  <input
+    type="text"
+    value={city}
+    onChange={(e) => setCity(e.target.value)}
+    onKeyDown={(e) => {
+  if (e.key === "Enter") handleSearch();
+}}
+    placeholder="Enter City..."
+    style={{
+      padding: "10px",
+      width: "250px",
+      borderRadius: "8px",
+      border: "none",
+      outline: "none",
+    }}
+  />
+
+ <button
+  onClick={handleSearch}
+  style={{
+    padding: "10px 18px",
+    background: "#2563eb",
+    color: "#fff",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+  }}
+>
+  Search
+</button>
+</div>
 
         <div className="banner-time">
           <svg

@@ -1,0 +1,33 @@
+.page {
+  padding: 20px;
+}
+
+.alert-card {
+  background: white;
+  border-left: 6px solid #2563eb;
+  padding: 20px;
+  margin-bottom: 15px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+
+.alert-card.high {
+  border-left-color: #dc2626;
+}
+
+.alert-card.medium {
+  border-left-color: #f59e0b;
+}
+
+.alert-card.low {
+  border-left-color: #16a34a;
+}
+
+.alert-card h2,
+.alert-card h3 {
+  margin-bottom: 10px;
+}
+
+.alert-card p {
+  margin: 6px 0;
+}

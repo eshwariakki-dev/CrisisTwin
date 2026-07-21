@@ -1,0 +1,45 @@
+.page {
+  padding: 20px;
+}
+
+.settings-card {
+  background: white;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+}
+
+.settings-card h2 {
+  margin-bottom: 15px;
+  color: #1e3a8a;
+}
+
+.settings-card select {
+  width: 250px;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+}
+
+.settings-card p {
+  margin: 8px 0;
+}
+body.dark-theme .settings-card h2 {
+  color: #ffffff;
+}
+
+body.dark-theme .page-header h1 {
+  color: #ffffff;
+}
+
+body.dark-theme .page-header p {
+  color: #cbd5e1;
+}

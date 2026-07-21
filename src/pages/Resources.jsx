@@ -1,152 +1,154 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import ResourceTabs from "../components/ResourceTabs";
+import ResourceCard from "../components/ResourceCard";
 import {
-  hospitals,
-  fireStations,
-  policeStations,
-  shelters,
-} from "../data/resources";
-
-function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-
-  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-}
-
-function getNearest(location, places) {
-  return places
-    .map((place) => ({
-      ...place,
-      distance: calculateDistance(
-        location.lat,
-        location.lng,
-        place.lat,
-        place.lng
-      ),
-    }))
-    .sort((a, b) => a.distance - b.distance)[0];
-}
+  getNearbyHospitals,
+  getNearbyShelters,
+  getNearbyFireStations,
+  getNearbyPoliceStations,
+} from "../services/geoapifyService";
+import { getLocation } from "../services/locationService";
+import { calculateDistance } from "../utils/distance";
+import "../styles/resources.css";
 
 function Resources() {
-  const disasterLocation =
-    JSON.parse(localStorage.getItem("disasterLocation")) || {
-      lat: 12.9716,
-      lng: 77.5946,
-    };
+  const [activeTab, setActiveTab] = useState("hospital");
+  const [resources, setResources] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [radius, setRadius] = useState(10000);
+  const [search, setSearch] = useState("");
 
-  const nearestHospital = getNearest(disasterLocation, hospitals);
-  const nearestFire = getNearest(disasterLocation, fireStations);
-  const nearestPolice = getNearest(disasterLocation, policeStations);
-  const nearestShelter = getNearest(disasterLocation, shelters);
+  useEffect(() => {
+    fetchResources();
+  }, [activeTab, radius]);
 
-  const resources = [
-    {
-      icon: "🚑",
-      name: "Ambulance Service",
-      status: "🟢 Available",
-      nearest: nearestHospital.name,
-      distance: nearestHospital.distance.toFixed(2) + " km",
-      response: `${Math.max(
-        3,
-        Math.round(nearestHospital.distance * 2)
-      )} mins`,
-      number: "108",
-    },
-    {
-      icon: "🚒",
-      name: "Fire & Rescue",
-      status: "🟢 Available",
-      nearest: nearestFire.name,
-      distance: nearestFire.distance.toFixed(2) + " km",
-      response: `${Math.max(
-        3,
-        Math.round(nearestFire.distance * 2)
-      )} mins`,
-      number: "101",
-    },
-    {
-      icon: "🚓",
-      name: "Police",
-      status: "🟢 Available",
-      nearest: nearestPolice.name,
-      distance: nearestPolice.distance.toFixed(2) + " km",
-      response: `${Math.max(
-        3,
-        Math.round(nearestPolice.distance * 2)
-      )} mins`,
-      number: "100",
-    },
-    {
-      icon: "🏠",
-      name: "Emergency Shelter",
-      status: "🟢 Beds Available",
-      nearest: nearestShelter.name,
-      distance: nearestShelter.distance.toFixed(2) + " km",
-      response: "Ready",
-      number: "Help Desk",
-    },
-    {
-      icon: "📞",
-      name: "National Emergency",
-      status: "24×7 Active",
-      nearest: "India Emergency Service",
-      distance: "--",
-      response: "Immediate",
-      number: "112",
-    },
-  ];
+  const fetchResources = async () => {
+    setLoading(true);
+
+    try {
+      const location = getLocation();
+
+      let data = [];
+
+      switch (activeTab) {
+        case "hospital":
+          data = await getNearbyHospitals(
+            location.lat,
+            location.lng,
+            radius
+          );
+          break;
+
+        case "shelter":
+          data = await getNearbyShelters(
+            location.lat,
+            location.lng,
+            radius
+          );
+          break;
+
+        case "fire":
+          data = await getNearbyFireStations(
+            location.lat,
+            location.lng,
+            radius
+          );
+          break;
+
+        case "police":
+          data = await getNearbyPoliceStations(
+            location.lat,
+            location.lng,
+            radius
+          );
+          break;
+
+        default:
+          data = [];
+      }
+
+      const list = data.map((item) => {
+        const lat = item.geometry.coordinates[1];
+        const lng = item.geometry.coordinates[0];
+
+        return {
+          id: item.properties.place_id,
+          name: item.properties.name || "Unknown",
+          address:
+            item.properties.formatted || "No address available",
+          lat,
+          lng,
+          distance: calculateDistance(
+            location.lat,
+            location.lng,
+            lat,
+            lng
+          ),
+          phone:
+            item.properties.contact?.phone || "Not Available",
+        };
+      });
+
+      list.sort((a, b) => a.distance - b.distance);
+
+      setResources(list);
+    } catch (error) {
+      console.error("Resources Error:", error);
+      setResources([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredResources = resources.filter((resource) =>
+    resource.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="page">
-      <h1>🚨 Emergency Resources</h1>
+      <div className="page-header">
+        <h1>🚨 Emergency Resources</h1>
+        <p>Resources near the selected disaster location.</p>
+      </div>
 
-      <p>Nearest emergency resources based on the selected disaster location.</p>
+      <div className="resource-controls">
+        <input
+          type="text"
+          placeholder="Search..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
 
-      {resources.map((resource, index) => (
-        <div
-          key={index}
-          style={{
-            background: "#1e293b",
-            color: "white",
-            padding: "20px",
-            borderRadius: "12px",
-            marginBottom: "18px",
-          }}
+        <select
+          value={radius}
+          onChange={(e) => setRadius(Number(e.target.value))}
         >
-          <h2>
-            {resource.icon} {resource.name}
-          </h2>
+          <option value={5000}>5 km</option>
+          <option value={10000}>10 km</option>
+          <option value={20000}>20 km</option>
+          <option value={50000}>50 km</option>
+        </select>
+      </div>
 
-          <p>
-            <strong>Status:</strong> {resource.status}
-          </p>
+      <ResourceTabs
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+      />
 
-          <p>
-            <strong>Nearest Resource:</strong> {resource.nearest}
-          </p>
-
-          <p>
-            <strong>Distance:</strong> {resource.distance}
-          </p>
-
-          <p>
-            <strong>Estimated Response:</strong> {resource.response}
-          </p>
-
-          <p>
-            <strong>Emergency Contact:</strong> {resource.number}
-          </p>
+      {loading ? (
+        <h3>Loading...</h3>
+      ) : filteredResources.length === 0 ? (
+        <h3>No resources found.</h3>
+      ) : (
+        <div className="resource-grid">
+          {filteredResources.map((resource) => (
+            <ResourceCard
+              key={resource.id}
+              resource={resource}
+            />
+          ))}
         </div>
-      ))}
+      )}
     </div>
   );
 }

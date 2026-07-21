@@ -1,95 +1,287 @@
 import React, { useEffect, useState } from "react";
 import { getForecast } from "../services/weatherService";
+import { getLocation } from "../services/locationService";
 
 function Predictions() {
   const [forecast, setForecast] = useState([]);
+  const [city, setCity] = useState("");
 
   useEffect(() => {
-  const fetchForecast = async () => {
-    const location =
-  JSON.parse(localStorage.getItem("disasterLocation")) || {
-    lat: 12.9716,
-    lng: 77.5946,
-  };
+    const fetchForecast = async () => {
+      const location = getLocation();
 
-const data = await getForecast(location.lat, location.lng);
+      setCity(location.city);
 
-    if (data) {
-      setForecast(data.list.slice(0, 3));
-    }
-  };
+      const data = await getForecast(
+        location.lat,
+        location.lng
+      );
 
-  // Initial fetch
-  fetchForecast();
+      if (data) {
+        setForecast(data.list.slice(0, 8));
+      }
+    };
 
-  // Refresh every 5 minutes
-  const interval = setInterval(() => {
     fetchForecast();
-  }, 5 * 60 * 1000);
 
-  // Cleanup
-  return () => clearInterval(interval);
-}, []);
-  return (
-    <div className="page predictions-page">
-      <h1>🔮 Disaster Predictions</h1>
+    const interval = setInterval(() => {
+      fetchForecast();
+    }, 300000);
 
-      {forecast.length === 0 ? (
-        <p>Loading forecast...</p>
-      ) : (
-        forecast.map((item, index) => {
-          let risk = "🟢 LOW";
+    return () => clearInterval(interval);
+  }, []);
 
-          if (item.weather[0].main === "Rain") {
-            risk = "🟡 MEDIUM";
-          }
+  const getPrediction = (item) => {
+    const weather =
+      item.weather[0].main.toLowerCase();
 
-          if (item.weather[0].main === "Thunderstorm") {
-            risk = "🔴 HIGH";
-          }
+    const temp = item.main.temp;
+    const wind = item.wind.speed;
+    const humidity = item.main.humidity;
+
+    let risk = "🟢 LOW";
+    let prediction = "Weather is stable.";
+    let recommendation =
+      "Continue monitoring weather.";
+
+    if (
+      weather.includes("thunderstorm")
+    ) {
+      risk = "🔴 CRITICAL";
+
+      prediction =
+        "Thunderstorms are forecast during this period. Lightning, heavy rainfall and temporary power interruptions are possible.";
+
+      recommendation =
+        "Stay indoors, avoid trees and postpone unnecessary travel.";
+    }
+
+    else if (
+      weather.includes("rain")
+    ) {
+      if (humidity > 85) {
+        risk = "🔴 HIGH";
+
+        prediction =
+          "Continuous rainfall with high humidity may cause waterlogging and localized flooding.";
+
+        recommendation =
+          "Avoid low-lying roads and keep emergency kits ready.";
+      }
+
+      else {
+        risk = "🟡 MEDIUM";
+
+        prediction =
+          "Rain is expected. Roads may become slippery and traffic delays are possible.";
+
+        recommendation =
+          "Drive carefully and monitor weather updates.";
+      }
+    }
+
+    else if (
+      temp >= 38
+    ) {
+      risk = "🟠 HIGH";
+
+      prediction =
+        "Very high temperatures may result in heatwave conditions.";
+
+      recommendation =
+        "Stay hydrated and avoid outdoor activity during peak afternoon hours.";
+    }
+
+    else if (
+      wind >= 10
+    ) {
+      risk = "🟠 HIGH";
+
+      prediction =
+        "Strong winds may affect traffic and could cause minor damage to loose objects.";
+
+      recommendation =
+        "Secure outdoor items and avoid unnecessary travel.";
+    }
+
+    else if (
+      weather.includes("fog") ||
+      weather.includes("mist") ||
+      weather.includes("haze")
+    ) {
+      risk = "🟡 MEDIUM";
+
+      prediction =
+        "Visibility is expected to reduce significantly.";
+
+      recommendation =
+        "Drive slowly using headlights.";
+    }
+
+    const confidence =
+      risk.includes("CRITICAL")
+        ? "96%"
+        : risk.includes("HIGH")
+        ? "90%"
+        : risk.includes("MEDIUM")
+        ? "80%"
+        : "72%";
+
+    return {
+      risk,
+      prediction,
+      recommendation,
+      confidence,
+    };
+  };
+    return (
+  <div className="page predictions-page">
+    <div className="page-header">
+      <h1>🤖 AI Disaster Intelligence</h1>
+      <p>Real-time disaster risk assessment and preventive recommendations for <strong>{city}</strong>.</p>
+    </div>
+
+    {forecast.length === 0 ? (
+      <h2>Loading forecast...</h2>
+    ) : (
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))",
+          gap: "20px",
+        }}
+      >
+        {forecast.slice(0, 4).map((item, index) => {
+          const result = getPrediction(item);
+
+          const borderColor = result.risk.includes("CRITICAL")
+            ? "#ef4444"
+            : result.risk.includes("HIGH")
+            ? "#f97316"
+            : result.risk.includes("MEDIUM")
+            ? "#eab308"
+            : "#22c55e";
 
           return (
             <div
               key={index}
               style={{
                 background: "#1e293b",
+                borderRadius: "14px",
+                padding: "18px",
+                borderTop: `5px solid ${borderColor}`,
                 color: "white",
-                padding: "15px",
-                marginBottom: "15px",
-                borderRadius: "10px",
+                boxShadow: "0 6px 15px rgba(0,0,0,0.25)",
               }}
             >
-              <h3>{item.dt_txt}</h3>
+              <h3>
+  🕒 {new Date(item.dt * 1000).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  })}
+</h3>
 
-              <p>
-                <strong>Weather:</strong>{" "}
-                {item.weather[0].description}
-              </p>
+<h2
+  style={{
+    color: borderColor,
+    marginTop: "15px",
+    marginBottom: "15px",
+  }}
+>
+  {result.risk} RISK
+</h2>
 
-              <p>
-                <strong>Temperature:</strong>{" "}
-                {item.main.temp} °C
-              </p>
+<div
+  style={{
+    background: "#111827",
+    padding: "12px",
+    borderRadius: "10px",
+    marginBottom: "12px",
+  }}
+>
+  <strong>🤖 AI Prediction</strong>
 
-              <p>
-                <strong>Humidity:</strong>{" "}
-                {item.main.humidity}%
-              </p>
+  <p style={{ marginTop: "8px" }}>
+    {result.prediction}
+  </p>
+</div>
 
-              <p>
-                <strong>Wind Speed:</strong>{" "}
-                {item.wind.speed} m/s
-              </p>
+<div
+  style={{
+    background: "#111827",
+    padding: "12px",
+    borderRadius: "10px",
+    marginBottom: "12px",
+  }}
+>
+  <strong>⚠ Possible Impact</strong>
 
-              <p>
-                <strong>Risk:</strong> {risk}
-              </p>
+  <ul
+    style={{
+      marginTop: "8px",
+      paddingLeft: "18px",
+      lineHeight: "1.8",
+    }}
+  >
+    {result.risk.includes("LOW") && (
+      <>
+        <li>Road conditions remain normal.</li>
+        <li>No significant disaster expected.</li>
+        <li>Outdoor activities are safe.</li>
+      </>
+    )}
+
+    {result.risk.includes("MEDIUM") && (
+      <>
+        <li>Traffic delays may occur.</li>
+        <li>Localized water accumulation possible.</li>
+        <li>Travel with caution.</li>
+      </>
+    )}
+
+    {result.risk.includes("HIGH") && (
+      <>
+        <li>Flooding may occur.</li>
+        <li>Strong winds can affect transport.</li>
+        <li>Emergency services may be required.</li>
+      </>
+    )}
+
+    {result.risk.includes("CRITICAL") && (
+      <>
+        <li>Severe weather expected.</li>
+        <li>Possible power outages.</li>
+        <li>Avoid outdoor movement.</li>
+      </>
+    )}
+  </ul>
+</div>
+
+<div
+  style={{
+    background: "#0f172a",
+    padding: "12px",
+    borderRadius: "10px",
+  }}
+>
+  <strong>✅ Recommended Action</strong>
+
+  <p
+    style={{
+      marginTop: "8px",
+      lineHeight: "1.7",
+    }}
+  >
+    {result.recommendation}
+  </p>
+</div>
             </div>
           );
-        })
-      )}
-    </div>
-  );
+        })}
+      </div>
+    )}
+  </div>
+);
 }
 
 export default Predictions;

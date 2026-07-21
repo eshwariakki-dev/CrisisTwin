@@ -1,4 +1,7 @@
 import { useState, useEffect } from "react";
+import { getWeather } from "../services/weatherService";
+import { getLocation, setLocation } from "../services/locationService";
+import { useMap } from "react-leaflet";
 import L from "leaflet";
 import {
   MapContainer,
@@ -13,17 +16,7 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-defaulticon-compatibility";
 import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility.css";
 
-import {
-  hospitals,
-  fireStations,
-  policeStations,
-  shelters,
-} from "../data/resources";
 
-const DEFAULT_LOCATION = {
-  lat: 12.9716,
-  lng: 77.5946,
-};
 
 // ---------------- ICONS ----------------
 
@@ -113,62 +106,157 @@ function sortByDistance(resources, location) {
 function LocationSelector({ onSelect }) {
   useMapEvents({
     click(e) {
-      const location = {
-        lat: e.latlng.lat,
-        lng: e.latlng.lng,
-      };
+      const current = getLocation();
 
-      localStorage.setItem(
-        "disasterLocation",
-        JSON.stringify(location)
-      );
+const location = {
+  city: current.city,
+  lat: e.latlng.lat,
+  lng: e.latlng.lng,
+};
 
-      onSelect(location);
+
+setLocation(location);
+
+onSelect(location);
     },
   });
+
+  return null;
+}
+function ChangeMapView({ center }) {
+  const map = useMap();
+
+  useEffect(() => {
+    map.setView(center, map.getZoom());
+  }, [center, map]);
 
   return null;
 }
 export default function GoogleMapView() {
 
   const [selectedLocation, setSelectedLocation] =
-    useState(DEFAULT_LOCATION);
+  useState(getLocation());
 
-  const [nearbyHospitals, setNearbyHospitals] =
-    useState([]);
-
-  const [nearbyShelters, setNearbyShelters] =
-    useState([]);
-
-  const [nearbyFireStations, setNearbyFireStations] =
-    useState([]);
-
-  const [nearbyPoliceStations, setNearbyPoliceStations] =
-    useState([]);
+ const [nearbyHospitals, setNearbyHospitals] = useState([]);
+const [nearbyShelters, setNearbyShelters] = useState([]);
+const [nearbyFireStations, setNearbyFireStations] = useState([]);
+const [nearbyPoliceStations, setNearbyPoliceStations] = useState([]);
+    const [weather, setWeather] = useState(null);
+const [riskColor, setRiskColor] = useState("green");
+const [riskLevel, setRiskLevel] = useState("LOW");
+useEffect(() => {
+  setSelectedLocation(getLocation());
+}, []);
 
   useEffect(() => {
 
-    setNearbyHospitals(
-      sortByDistance(hospitals, selectedLocation)
-    );
+   const fetchNearbyPlaces = async () => {
+  const radius = 5000;
 
-    setNearbyShelters(
-      sortByDistance(shelters, selectedLocation)
-    );
+  const query = `
+  [out:json];
+  (
+    node["amenity"="hospital"](around:${radius},${selectedLocation.lat},${selectedLocation.lng});
+    node["amenity"="police"](around:${radius},${selectedLocation.lat},${selectedLocation.lng});
+    node["amenity"="fire_station"](around:${radius},${selectedLocation.lat},${selectedLocation.lng});
+    node["amenity"="shelter"](around:${radius},${selectedLocation.lat},${selectedLocation.lng});
+  );
+  out body;
+  `;
 
-    setNearbyFireStations(
-      sortByDistance(fireStations, selectedLocation)
-    );
+  try {
+  const response = await fetch(
+    "https://overpass.kumi.systems/api/interpreter",
+    {
+      method: "POST",
+      body: query,
+    }
+  );
 
-    setNearbyPoliceStations(
-      sortByDistance(policeStations, selectedLocation)
-    );
+  const data = await response.json();
+  console.log(data.elements);
+
+  // Rest of your code...
+} catch (err) {
+  console.error("Overpass API Error:", err);
+}
+
+  const data = await response.json();
+  console.log(data.elements);
+
+  const hospitals = [];
+  const shelters = [];
+  const fireStations = [];
+  const policeStations = [];
+
+  data.elements.forEach((place) => {
+    const obj = {
+      id: place.id,
+      name: place.tags?.name || "Unknown",
+      lat: place.lat,
+      lng: place.lon,
+    };
+
+    if (place.tags.amenity === "hospital")
+      hospitals.push(obj);
+
+    if (place.tags.amenity === "shelter")
+      shelters.push(obj);
+
+    if (place.tags.amenity === "fire_station")
+      fireStations.push(obj);
+
+    if (place.tags.amenity === "police")
+      policeStations.push(obj);
+  });
+
+  setNearbyHospitals(hospitals);
+  setNearbyShelters(shelters);
+  setNearbyFireStations(fireStations);
+  setNearbyPoliceStations(policeStations);
+};
+
+fetchNearbyPlaces();
+    const loadWeather = async () => {
+  try {
+    const location = getLocation();
+
+const data = await getWeather(location.city);
+
+    setWeather(data);
+
+    let score = 0;
+
+    if (data.weather[0].main === "Rain") score += 40;
+    if (data.weather[0].main === "Thunderstorm") score += 60;
+    if (data.wind.speed >= 8) score += 20;
+    if (data.main.temp >= 35) score += 20;
+
+    if (score >= 60) {
+      setRiskLevel("HIGH");
+      setRiskColor("red");
+    } else if (score >= 30) {
+      setRiskLevel("MEDIUM");
+      setRiskColor("orange");
+    } else {
+      setRiskLevel("LOW");
+      setRiskColor("green");
+    }
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+loadWeather();
 
   }, [selectedLocation]);
 
   return (
     <MapContainer
-      center={[DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng]}
+     center={[
+  selectedLocation.lat,
+  selectedLocation.lng,
+]}
       zoom={13}
       style={{
         height: "600px",
@@ -180,6 +268,12 @@ export default function GoogleMapView() {
         attribution="© OpenStreetMap"
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      <ChangeMapView
+  center={[
+    selectedLocation.lat,
+    selectedLocation.lng,
+  ]}
+/>
 
       <LocationSelector
         onSelect={setSelectedLocation}
@@ -192,22 +286,32 @@ export default function GoogleMapView() {
         ]}
         radius={500}
         pathOptions={{
-          color: "red",
-          fillColor: "red",
+          color: riskColor,
+fillColor: riskColor,
           fillOpacity: 0.25,
         }}
       />
 
-      <Marker
-        position={[
-          selectedLocation.lat,
-          selectedLocation.lng,
-        ]}
-        icon={disasterIcon}
-      >
+     <Marker
+  position={[
+    selectedLocation.lat,
+    selectedLocation.lng,
+  ]}
+  icon={disasterIcon}
+>
         <Popup>
-          <b>🚨 Disaster Location</b>
-        </Popup>
+  <h3>🚨 Disaster Zone</h3>
+
+  <p><strong>Risk:</strong> {riskLevel}</p>
+
+  <p><strong>Weather:</strong> {weather?.weather?.[0]?.main}</p>
+
+  <p><strong>Temperature:</strong> {weather?.main?.temp?.toFixed(1)}°C</p>
+
+  <p><strong>Humidity:</strong> {weather?.main?.humidity}%</p>
+
+  <p><strong>Wind:</strong> {weather?.wind?.speed} m/s</p>
+</Popup>
       </Marker>
             {/* Hospitals */}
       {nearbyHospitals.map((hospital) => {

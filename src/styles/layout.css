@@ -135,3 +135,63 @@ a {
     transform: translateY(0);
   }
 }
+/* ===========================
+   DARK THEME
+=========================== */
+
+body.dark-theme {
+  --bg-color: #0f172a;
+  --card-bg: #1e293b;
+  --border-color: #334155;
+
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+
+  --primary-color: #0f172a;
+  --secondary-color: #1e293b;
+
+  --sidebar-bg: #020617;
+  --sidebar-hover-bg: #1e293b;
+  --sidebar-active-bg: #2563eb;
+}
+
+/* Content Area */
+body.dark-theme .content-outlet {
+  background: var(--bg-color);
+}
+
+/* Cards */
+body.dark-theme .settings-card,
+body.dark-theme .metric-card,
+body.dark-theme .resource-card,
+body.dark-theme .alert-card,
+body.dark-theme .prediction-card,
+body.dark-theme .dashboard-card {
+  background: var(--card-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+/* Inputs */
+body.dark-theme input,
+body.dark-theme select,
+body.dark-theme textarea {
+  background: #334155;
+  color: white;
+  border: 1px solid #475569;
+}
+
+body.dark-theme input::placeholder {
+  color: #cbd5e1;
+}
+
+/* Buttons */
+body.dark-theme button {
+  background: #2563eb;
+  color: white;
+}
+
+body.dark-theme button:hover {
+  background: #1d4ed8;
+}

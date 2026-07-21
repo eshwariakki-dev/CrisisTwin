@@ -1,82 +1,90 @@
-import React from "react";
-import { hospitals } from "../data/resources";
-
-function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLon = ((lon2 - lon1) * Math.PI) / 180;
-
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-
-  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-}
+import React, { useEffect, useState } from "react";
+import { getNearbyHospitals } from "../services/geoapifyService";
+import { calculateDistance } from "../utils/distance";
 
 function Hospitals() {
+  const [hospitals, setHospitals] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const disasterLocation =
-    JSON.parse(localStorage.getItem("disasterLocation")) || {
-      lat: 12.9716,
-      lng: 77.5946,
+  useEffect(() => {
+    const fetchHospitals = async () => {
+      const location =
+        JSON.parse(localStorage.getItem("disasterLocation")) || {
+          lat: 12.9716,
+          lng: 77.5946,
+        };
+
+      const data = await getNearbyHospitals(location.lat, location.lng);
+
+      const hospitalList = data.map((hospital) => {
+        const hLat = hospital.geometry.coordinates[1];
+        const hLng = hospital.geometry.coordinates[0];
+
+        return {
+          id: hospital.properties.place_id,
+          name:
+            hospital.properties.name ||
+            "Unnamed Hospital",
+          address:
+            hospital.properties.formatted ||
+            "Address not available",
+          lat: hLat,
+          lng: hLng,
+          distance: calculateDistance(
+            location.lat,
+            location.lng,
+            hLat,
+            hLng
+          ),
+        };
+      });
+
+      hospitalList.sort(
+        (a, b) => a.distance - b.distance
+      );
+
+      setHospitals(hospitalList);
+      setLoading(false);
     };
 
-  console.log("Disaster Location:", disasterLocation);
-
-  const sortedHospitals = [...hospitals]
-    .map((hospital) => ({
-      ...hospital,
-      distance: calculateDistance(
-        disasterLocation.lat,
-        disasterLocation.lng,
-        hospital.lat,
-        hospital.lng
-      ),
-    }))
-    .sort((a, b) => a.distance - b.distance);
+    fetchHospitals();
+  }, []);
 
   return (
     <div className="page">
-      <h1>🏥 Emergency Hospitals</h1>
+      <div className="page-header">
+        <h1>🏥 Nearby Hospitals</h1>
+        <p>Nearest hospitals around the selected disaster location.</p>
+      </div>
 
-      <p>Hospitals nearest to the current disaster location.</p>
+      {loading ? (
+        <h3>Loading hospitals...</h3>
+      ) : (
+        hospitals.map((hospital) => (
+          <div className="info-card" key={hospital.id}>
+            <h3>{hospital.name}</h3>
 
-      {sortedHospitals.map((hospital) => (
-        <div
-          key={hospital.id}
-          style={{
-            background: "#1e293b",
-            color: "white",
-            padding: "20px",
-            borderRadius: "10px",
-            marginBottom: "15px",
-          }}
-        >
-          <h2>{hospital.name}</h2>
+            <p>
+              <strong>📍 Address:</strong>
+              <br />
+              {hospital.address}
+            </p>
 
-          <p>
-            <strong>Distance:</strong>{" "}
-            {hospital.distance.toFixed(2)} km
-          </p>
+            <p>
+              <strong>📏 Distance:</strong>{" "}
+              {hospital.distance} km
+            </p>
 
-          <a
-            href={`https://www.google.com/maps/search/?api=1&query=${hospital.lat},${hospital.lng}`}
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              color: "#38bdf8",
-              textDecoration: "none",
-              fontWeight: "bold",
-            }}
-          >
-            📍 View on Google Maps
-          </a>
-        </div>
-      ))}
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${hospital.lat},${hospital.lng}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              🗺 Open in Google Maps
+            </a>
+          </div>
+        ))
+      )}
     </div>
   );
 }

@@ -466,18 +466,21 @@ body{
 }
 
 .info-card{
-    background:white;
+    background: var(--card-bg);
     border-radius:12px;
     padding:20px;
     box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    color: var(--text-primary);
 }
 
 .info-card h3{
     margin-bottom:15px;
+    color: var(--text-primary);
 }
 
 .info-card p{
     margin:8px 0;
+    color: var(--text-secondary);
 }
 .card {
   background: #1e293b;
@@ -491,4 +494,15 @@ body{
 
 .card:hover {
   transform: translateY(-5px);
+}
+body.dark-theme .info-card{
+    background:#1e293b;
+}
+
+body.dark-theme .info-card h3{
+    color:#ffffff;
+}
+
+body.dark-theme .info-card p{
+    color:#cbd5e1;
 }

@@ -1,73 +1,170 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import "../styles/settings.css";
 
 function Settings() {
-  const [city, setCity] = useState("Bengaluru");
+  const [theme, setTheme] = useState("Light");
+  const [refreshRate, setRefreshRate] = useState("30");
   const [notifications, setNotifications] = useState(true);
+
+  useEffect(() => {
+    const savedTheme =
+      localStorage.getItem("theme") || "Light";
+
+    const savedRefresh =
+      localStorage.getItem("refreshRate") || "30";
+
+    const savedNotifications =
+      localStorage.getItem("notifications");
+
+    setTheme(savedTheme);
+    setRefreshRate(savedRefresh);
+
+    if (savedNotifications !== null) {
+      setNotifications(savedNotifications === "true");
+    }
+
+    applyTheme(savedTheme);
+  }, []);
+
+  const applyTheme = (selectedTheme) => {
+    if (selectedTheme === "Dark") {
+      document.body.classList.add("dark-theme");
+    } else {
+      document.body.classList.remove("dark-theme");
+    }
+  };
+
+  const handleThemeChange = (value) => {
+    setTheme(value);
+
+    localStorage.setItem("theme", value);
+
+    applyTheme(value);
+  };
+
+  const handleRefreshChange = (value) => {
+    setRefreshRate(value);
+
+    localStorage.setItem("refreshRate", value);
+  };
+
+  const handleNotificationChange = () => {
+    const value = !notifications;
+
+    setNotifications(value);
+
+    localStorage.setItem(
+      "notifications",
+      value
+    );
+  };
 
   return (
     <div className="page">
-      <h1>⚙️ Settings</h1>
+      <div className="page-header">
+        <h1>⚙️ Settings</h1>
+        <p>Configure your CrisisTwin dashboard.</p>
+      </div>
 
-      <div
-        style={{
-          background: "#1e293b",
-          color: "white",
-          padding: "20px",
-          borderRadius: "10px",
-          maxWidth: "600px",
-        }}
-      >
-        <h2>Application Settings</h2>
+      <div className="settings-card">
+        <h2>🎨 Dashboard Theme</h2>
 
-        <div style={{ marginBottom: "20px" }}>
-          <label>
-            <strong>Preferred City</strong>
-          </label>
-          <br />
+        <select
+          value={theme}
+          onChange={(e) =>
+            handleThemeChange(e.target.value)
+          }
+        >
+          <option>Light</option>
+          <option>Dark</option>
+        </select>
+      </div>
+
+      <div className="settings-card">
+        <h2>🔄 Auto Refresh</h2>
+
+        <select
+          value={refreshRate}
+          onChange={(e) =>
+            handleRefreshChange(e.target.value)
+          }
+        >
+          <option value="15">
+            15 Seconds
+          </option>
+
+          <option value="30">
+            30 Seconds
+          </option>
+
+          <option value="60">
+            1 Minute
+          </option>
+
+          <option value="300">
+            5 Minutes
+          </option>
+        </select>
+
+        <p style={{ marginTop: "10px" }}>
+          Current Refresh : {refreshRate} Seconds
+        </p>
+      </div>
+
+      <div className="settings-card">
+        <h2>🔔 Notifications</h2>
+
+        <label className="toggle">
           <input
-            type="text"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "10px",
-              marginTop: "8px",
-              borderRadius: "5px",
-              border: "none",
-            }}
+            type="checkbox"
+            checked={notifications}
+            onChange={handleNotificationChange}
           />
-        </div>
 
-        <div style={{ marginBottom: "20px" }}>
-          <label>
-            <input
-              type="checkbox"
-              checked={notifications}
-              onChange={() => setNotifications(!notifications)}
-            />
-            {" "}Enable Weather & Disaster Alerts
-          </label>
-        </div>
+          Enable Disaster Alerts
+        </label>
 
-        <hr />
+        <p style={{ marginTop: "10px" }}>
+          Status :
+          <strong>
+            {notifications
+              ? " Enabled"
+              : " Disabled"}
+          </strong>
+        </p>
+      </div>
 
-        <h3>Current Configuration</h3>
-
-        <p>📍 City: {city}</p>
+      <div className="settings-card">
+        <h2>ℹ️ Project Information</h2>
 
         <p>
-          🔔 Notifications:
-          {" "}
-          {notifications ? "Enabled" : "Disabled"}
+          <strong>Project:</strong> CrisisTwin
         </p>
 
-        <p>🌦 Weather Source: OpenWeather API</p>
+        <p>
+          <strong>Version:</strong> 1.0
+        </p>
 
-        <p>🗺 Map Source: OpenStreetMap + Leaflet</p>
+        <p>
+          <strong>Purpose:</strong> AI Powered Predictive
+          Disaster Intelligence Platform
+        </p>
 
-        <p>🤖 Prediction Engine: Forecast-based Risk Analysis</p>
+        <p>
+          <strong>Theme:</strong> {theme}
+        </p>
 
-        <p>Version: 1.0.0</p>
+        <p>
+          <strong>Refresh:</strong>{" "}
+          {refreshRate} Seconds
+        </p>
+
+        <p>
+          <strong>Notifications:</strong>{" "}
+          {notifications
+            ? "Enabled"
+            : "Disabled"}
+        </p>
       </div>
     </div>
   );
